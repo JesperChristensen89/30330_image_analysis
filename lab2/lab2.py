@@ -1,6 +1,7 @@
 import cv2
 from matplotlib import pyplot as plt
 import argparse
+import math
 
 # argument parser
 ap = argparse.ArgumentParser()
@@ -70,5 +71,55 @@ elif part == 2: ## Part 2 - Center off mass
 
     cv2.imshow("Modified image", img1)
     cv2.moveWindow("Modified image", width+20, 10)
+
+    cv2.waitKey(0)
+
+elif part == 3: ## Part 3 - Image moments
+
+    img1 = img.copy()
+
+
+
+    __, img1 = cv2.threshold(img,125,255, cv2.THRESH_BINARY)
+    __, contours, __ = cv2.findContours(img1.copy(),cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)
+    contours = sorted(contours, key=cv2.contourArea, reverse=True)
+    contour = contours[1]
+
+    img_color = img.copy()
+    img_color = cv2.cvtColor(img_color,cv2.COLOR_GRAY2RGB)
+
+
+
+    # draw some stuff
+    cv2.drawContours(img_color, [contour], 0, (0,255,0), 3)
+
+    M = cv2.moments(contour)
+    nu_20 = int(M['mu20'])/int(M['m00'])
+    nu_02 = int(M['mu02'])/int(M['m00'])
+    nu_11 = int(M['mu11'])/int(M['m00'])
+
+    print "nu_20: {0} nu_02: {1} nu_11: {2}".format(nu_20, nu_02, nu_11)
+
+    tilt = math.atan(2*nu_11/(nu_20-nu_02))/2
+
+    cx = int(M['m10']/M['m00'])
+    cy = int(M['m01']/M['m00'])
+
+    x1 = cx + 100 * math.sin(tilt)
+    x1 = int(x1)
+    y1 = cy + 100 * math.cos(tilt)
+    y1 = int(y1)
+
+    cv2.line(img_color,(cx,cy),(x1,y1),(0,255,0),1)
+
+    print "Tilt of object: {0}".format(tilt)
+
+    cv2.imshow("Original image", img_color)
+    cv2.moveWindow("Original image", 10, 10)
+
+    cv2.imshow("Modified image", img1)
+    cv2.moveWindow("Modified image", width+20, 10)
+
+
 
     cv2.waitKey(0)
