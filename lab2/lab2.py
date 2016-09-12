@@ -1,7 +1,30 @@
-import cv2
-from matplotlib import pyplot as plt
 import argparse
 import math
+import numpy as np
+from matplotlib import pyplot as plt
+import cv2
+
+def ImageHistogram(img_in):
+    img_out = np.ones((600, 600), np.uint8) * 255
+    grey_color = 125
+    # x-axis draw
+    img_out[560, 35:555] = grey_color
+    # y-axis draw
+    img_out[15:565, 40] = grey_color
+    # 255 tap
+    img_out[560:565, 552] = grey_color
+    # draw values
+    cv2.putText(img_out, '0', (35, 585), cv2.FONT_HERSHEY_SIMPLEX, 0.5, grey_color, 2)
+    cv2.putText(img_out, '255', (530, 585), cv2.FONT_HERSHEY_SIMPLEX, 0.5, grey_color, 2)
+
+    hist = cv2.calcHist([img_in], [0], None, [256], [0, 256])
+    hist = hist / np.amax(hist) * 550
+    hist = hist.astype(int)
+    i = 0
+    for val in hist:
+        img_out[(565 - val[0]):560, i + 41:i + 43] = grey_color
+        i += 2
+    return img_out
 
 # argument parser
 ap = argparse.ArgumentParser()
@@ -34,13 +57,21 @@ if part == 1: ## Part 1 - image thresholding
     cv2.imshow("Modified image", img1)
     cv2.moveWindow("Modified image", width+20, 10)
 
+    #hist = ImageHistogram(img.copy())
+
+    #cv2.imshow("Histogram", hist)
+    #cv2.moveWindow("Histogram", 2*width + 2*20, 10)
+
+    #cv2.waitKey(0)
+
     hist = cv2.calcHist([img],[0],None,[256],[0,256])
     fig = plt.hist(img.ravel(),256,[0,256])
-    plt.get_current_fig_manager().window.setGeometry(2*width+30,10,500,heigth)
+    #plt.get_current_fig_manager().window.setGeometry(2*width+30,10,500,heigth)
     axes = plt.gca()
     axes.set_xlim([0,255])
     plt.show()
 
+   
 elif part == 2: ## Part 2 - Center off mass
 
     img1 = img.copy()
@@ -79,7 +110,6 @@ elif part == 3: ## Part 3 - Image moments
     img1 = img.copy()
 
 
-
     __, img1 = cv2.threshold(img,125,255, cv2.THRESH_BINARY)
     __, contours, __ = cv2.findContours(img1.copy(),cv2.RETR_LIST,cv2.CHAIN_APPROX_SIMPLE)
     contours = sorted(contours, key=cv2.contourArea, reverse=True)
@@ -105,14 +135,23 @@ elif part == 3: ## Part 3 - Image moments
     cx = int(M['m10']/M['m00'])
     cy = int(M['m01']/M['m00'])
 
-    x1 = cx + 100 * math.sin(tilt)
+    line_lengt = 100
+
+    x1 = cx + line_lengt * math.cos(tilt-math.pi/2)
     x1 = int(x1)
-    y1 = cy + 100 * math.cos(tilt)
+    y1 = cy + line_lengt * math.sin(tilt-math.pi/2)
     y1 = int(y1)
 
     cv2.line(img_color,(cx,cy),(x1,y1),(0,255,0),1)
 
-    print "Tilt of object: {0}".format(tilt)
+    x1 = cx + line_lengt * math.cos(tilt)
+    x1 = int(x1)
+    y1 = cy + line_lengt * math.sin(tilt)
+    y1 = int(y1)
+
+    cv2.line(img_color, (cx, cy), (x1, y1), (0, 255, 0), 1)
+
+    print "Tilt of object: {0}deg".format(tilt*180/math.pi)
 
     cv2.imshow("Original image", img_color)
     cv2.moveWindow("Original image", 10, 10)
