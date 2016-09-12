@@ -4,28 +4,6 @@ import numpy as np
 from matplotlib import pyplot as plt
 import cv2
 
-def ImageHistogram(img_in):
-    img_out = np.ones((600, 600), np.uint8) * 255
-    grey_color = 125
-    # x-axis draw
-    img_out[560, 35:555] = grey_color
-    # y-axis draw
-    img_out[15:565, 40] = grey_color
-    # 255 tap
-    img_out[560:565, 552] = grey_color
-    # draw values
-    cv2.putText(img_out, '0', (35, 585), cv2.FONT_HERSHEY_SIMPLEX, 0.5, grey_color, 2)
-    cv2.putText(img_out, '255', (530, 585), cv2.FONT_HERSHEY_SIMPLEX, 0.5, grey_color, 2)
-
-    hist = cv2.calcHist([img_in], [0], None, [256], [0, 256])
-    hist = hist / np.amax(hist) * 550
-    hist = hist.astype(int)
-    i = 0
-    for val in hist:
-        img_out[(565 - val[0]):560, i + 41:i + 43] = grey_color
-        i += 2
-    return img_out
-
 # argument parser
 ap = argparse.ArgumentParser()
 ap.add_argument("-p", "--part", required=True,
@@ -49,6 +27,13 @@ if part == 1: ## Part 1 - image thresholding
 
     img1 = img.copy()
 
+    hist = cv2.calcHist([img], [0], None, [256], [0, 256])
+    fig = plt.hist(img.ravel(), 256, [0, 256])
+    # plt.get_current_fig_manager().window.setGeometry(2*width+30,10,500,heigth)
+    axes = plt.gca()
+    axes.set_xlim([0, 255])
+    plt.show()
+
     cv2.imshow("Original image", img)
     cv2.moveWindow("Original image", 10, 10)
 
@@ -62,16 +47,13 @@ if part == 1: ## Part 1 - image thresholding
     #cv2.imshow("Histogram", hist)
     #cv2.moveWindow("Histogram", 2*width + 2*20, 10)
 
-    #cv2.waitKey(0)
+    cv2.waitKey(0)
 
-    hist = cv2.calcHist([img],[0],None,[256],[0,256])
-    fig = plt.hist(img.ravel(),256,[0,256])
-    #plt.get_current_fig_manager().window.setGeometry(2*width+30,10,500,heigth)
-    axes = plt.gca()
-    axes.set_xlim([0,255])
-    plt.show()
+    plt.close()
 
-   
+
+
+
 elif part == 2: ## Part 2 - Center off mass
 
     img1 = img.copy()
@@ -162,3 +144,67 @@ elif part == 3: ## Part 3 - Image moments
 
 
     cv2.waitKey(0)
+
+elif part == 4:
+
+    img = cv2.imread("../img/1.JPG",cv2.IMREAD_GRAYSCALE)
+    img = cv2.resize(img,None,None,fx=0.2,fy=0.2)
+
+    img1 = cv2.imread("../img/2.JPG", cv2.IMREAD_GRAYSCALE)
+    img1 = cv2.resize(img1, None, None, fx=0.2, fy=0.2)
+
+    img_c = cv2.imread("../img/1.JPG")
+    img_c = cv2.resize(img_c, None, None, fx=0.2, fy=0.2)
+
+    hist = cv2.calcHist([img], [0], None, [256], [0, 256])
+    fig = plt.hist(img.ravel(), 256, [0, 256])
+    axes = plt.gca()
+    axes.set_xlim([0, 255])
+    #plt.show()
+
+
+
+    blur = cv2.GaussianBlur(img, (5, 5), 0)
+    __, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    height, width = img.shape
+
+    cv2.imshow("Thresh", thresh)
+    cv2.moveWindow("Thresh", 10+width, 10)
+
+    blur1 = cv2.GaussianBlur(img1, (5, 5), 0)
+    __, thresh1 = cv2.threshold(blur1, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    __, contours, __ = cv2.findContours(thresh.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+    contours = sorted(contours, key=cv2.contourArea, reverse=True)
+    contour = contours[1]
+
+    __, contours1, __ = cv2.findContours(thresh1.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+    contours1 = sorted(contours1, key=cv2.contourArea, reverse=True)
+    contour1 = contours1[1]
+
+    cv2.drawContours(img_c, [contour], 0, (0, 255, 0), 3)
+
+    cv2.imshow("Thresh rotated", thresh1)
+    cv2.moveWindow("Thresh rotated", 10, 10)
+
+    M = cv2.moments(contour)
+    M1 = cv2.moments(contour1)
+
+    print "m00: {0} m00: {1}".format(int(M['m00']),int(M1['m00']))
+    print "mu20: {0} mu20: {1}".format(int(M['mu20']), int(M1['mu20']))
+    print "mu11: {0} mu11: {1}".format(int(M['mu11']), int(M1['mu11']))
+
+    nu_20 = int(M['mu20']) / int(M['m00'])
+    nu_02 = int(M['mu02']) / int(M['m00'])
+
+    nu1_20 = int(M1['mu20']) / int(M1['m00'])
+    nu1_02 = int(M1['mu02']) / int(M1['m00'])
+
+    print "I: {0} I: {1}".format( nu_20+nu_02, nu1_20+nu1_02)
+
+
+
+    cv2.waitKey(0)
+
+    #plt.close()
