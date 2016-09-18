@@ -28,8 +28,15 @@ if part == 1:
     img_LP1 = np.zeros((height - 2, width - 2), np.uint8)
     for x in range(width - 2):
         for y in range(height - 2):
-            roi = img[y:y + 2, x:x + 2]
-            img_LP1[y, x] = np.median(roi)
+            roi = img[y:y + 3, x:x + 3]
+
+            roi_flat = np.hstack(roi)
+
+            img_LP1[y, x] = sum(roi_flat)/len(roi_flat)
+
+
+    cv2.imshow("Low-pass-man", img_LP1)
+    cv2.moveWindow("Low-pass-man", width + 20, 10)
 
     # using filter2d
     kernel = np.ones((3,3),np.float32)/9
@@ -72,19 +79,27 @@ if part == 3:
 
 if part == 4:
 
-    test = img[0:20,0:20]
-    test1 = np.zeros((20,20),np.uint8)
-    for x in range(0,20):
-        for y in range(0,20):
-            test1[y,x] = (test[y,x])
-            #print x,y
+    kernel = np.array([[0,0,1,2,2,2,1,0,0],
+                       [0,1,5,10,12,10,5,1,0],
+                       [1,5,15,19,16,19,15,5,1],
+                       [2,10,19,-19,-64,-19,19,10,2],
+                       [2,12,16,-64,-148,-64,16,12,2],
+                       [2,10,19,-19,-64,-19,19,10,2],
+                       [1, 5, 15, 19, 16, 19, 15, 5, 1],
+                       [0, 1, 5, 10, 12, 10, 5, 1,0],
+                       [0, 0, 1, 2, 2, 2, 1, 0, 0]])
 
-    cv2.imshow("test", test1)
-    #ar = np.array([[1,2,3],
-    #               [4,5,6],
-    #               [7,8,9]])
-    #print int(np.median(ar))
 
+    img_HP = cv2.filter2D(img, -1, kernel)
+    cv2.imshow("Laplacian", img_HP)
+    cv2.moveWindow("Laplacian", width + 20, 10)
+
+    while True:
+        camera = cv2.VideoCapture(0)
+        (grabbed, frame) = camera.read()
+        frame = cv2.filter2D(frame,-1,kernel)
+        cv2.imshow("test", frame)
+        cv2.waitKey(0)
 
 
 
